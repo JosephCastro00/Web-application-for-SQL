@@ -1,189 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Records System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .container { max-width: 1200px; margin: auto; }
-        .action-buttons form { display: inline; }
-    </style>
+    <title>{{ title }}</title>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">Student Records</a>
-            <div class="navbar-nav">
-                <a class="nav-link" href="/?page=view">View Students</a>
-                <a class="nav-link" href="/?page=add">Add Student</a>
-                <a class="nav-link" href="/?page=search">Search</a>
-            </div>
-        </div>
-    </nav>
-    
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <!-- HOME PAGE -->
-        {% if page == 'home' or page is none %}
-        <div class="jumbotron bg-light p-5 rounded">
-            <h1 class="display-4">Welcome to Student Records System</h1>
-            <p class="lead">Manage your student database efficiently.</p>
-            <hr class="my-4">
-            <p>Use the navigation menu to view, add, search, update, or delete student records.</p>
-            <a class="btn btn-primary btn-lg" href="/?page=view" role="button">View All Students</a>
-        </div>
-        {% endif %}
-        
-        <!-- VIEW STUDENTS PAGE -->
-        {% if page == 'view' %}
-        <h2>Student List</h2>
-        <a href="/?page=add" class="btn btn-success mb-3">Add New Student</a>
-        
-        {% if students %}
-            <table class="table table-striped table-bordered">
-                <thead class="table-dark">
-                    <tr>
-                        <th>ID</th><th>First Name</th><th>Last Name</th>
-                        <th>Email</th><th>Phone</th><th>Enrollment Date</th>
-                        <th>Major</th><th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td>{{ student.student_id }}</td>
-                        <td>{{ student.first_name }}</td>
-                        <td>{{ student.last_name }}</td>
-                        <td>{{ student.email }}</td>
-                        <td>{{ student.phone }}</td>
-                        <td>{{ student.enrollment_date }}</td>
-                        <td>{{ student.major }}</td>
-                        <td class="action-buttons">
-                            <a href="/update/{{ student.student_id }}" class="btn btn-sm btn-warning">Edit</a>
-                            <form action="/delete/{{ student.student_id }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No students found in the database.</p>
-        {% endif %}
-        {% endif %}
-        
-        <!-- ADD STUDENT PAGE -->
-        {% if page == 'add' %}
-        <h2>Add New Student</h2>
-        <form method="POST" action="/add">
-            <div class="mb-3">
-                <label>First Name</label>
-                <input type="text" name="first_name" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Last Name</label>
-                <input type="text" name="last_name" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Email</label>
-                <input type="email" name="email" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Phone</label>
-                <input type="text" name="phone" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label>Enrollment Date</label>
-                <input type="date" name="enrollment_date" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Major</label>
-                <input type="text" name="major" class="form-control">
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-            <a href="/?page=view" class="btn btn-secondary">Cancel</a>
-        </form>
-        {% endif %}
-        
-        <!-- SEARCH PAGE -->
-        {% if page == 'search' %}
-        <h2>Search Students</h2>
-        <form method="POST" action="/search">
-            <div class="input-group mb-3">
-                <input type="text" name="search_term" class="form-control" placeholder="Search by name, ID, or email..." required>
-                <button type="submit" class="btn btn-primary">Search</button>
-            </div>
-        </form>
-        
-        {% if students %}
-            <h3>Results:</h3>
-            <table class="table table-striped">
-                <thead class="table-dark">
-                    <tr><th>ID</th><th>Name</th><th>Email</th><th>Major</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                    {% for s in students %}
-                    <tr>
-                        <td>{{ s.student_id }}</td>
-                        <td>{{ s.first_name }} {{ s.last_name }}</td>
-                        <td>{{ s.email }}</td>
-                        <td>{{ s.major }}</td>
-                        <td><a href="/update/{{ s.student_id }}" class="btn btn-sm btn-warning">Edit</a></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% elif search_performed %}
-            <p>No students found matching your search.</p>
-        {% endif %}
-        {% endif %}
-        
-        <!-- UPDATE STUDENT PAGE -->
-        {% if page == 'update' and student %}
-        <h2>Update Student: {{ student.first_name }} {{ student.last_name }}</h2>
-        <form method="POST" action="/update/{{ student.student_id }}">
-            <div class="mb-3">
-                <label>First Name</label>
-                <input type="text" name="first_name" value="{{ student.first_name }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Last Name</label>
-                <input type="text" name="last_name" value="{{ student.last_name }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Email</label>
-                <input type="email" name="email" value="{{ student.email }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Phone</label>
-                <input type="text" name="phone" value="{{ student.phone }}" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label>Enrollment Date</label>
-                <input type="date" name="enrollment_date" value="{{ student.enrollment_date }}" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label>Major</label>
-                <input type="text" name="major" value="{{ student.major }}" class="form-control">
-            </div>
-            <button type="submit" class="btn btn-primary">Update</button>
-            <a href="/?page=view" class="btn btn-secondary">Cancel</a>
-        </form>
-        {% endif %}
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% if page == "home" %}
+    <h1>Welcome</h1>
+    <p>This is the home page.</p>
+{% endif %}
+
+{% if page == "students" %}
+    <h1>All Students</h1>
+    <ul>
+        {% for s in students %}
+            <li>{{ s.first_name }} {{ s.last_name }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if page == "add" %}
+    <h1>Add Student</h1>
+    <form method="post">
+        <input name="first_name">
+        <input name="last_name">
+        <button>Add</button>
+    </form>
+{% endif %}
+
 </body>
 </html>
+@app.route("/")
+def home():
+    return render_template("app.html", page="home", title="Home")
+
+@app.route("/students")
+def students():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM students")
+    data = cursor.fetchall()
+    return render_template("app.html", page="students", title="Students", students=data)
+
+@app.route("/add", methods=["GET", "POST"])
+def add():
+    if request.method == "POST":
+        # insert logic
+        pass
+    return render_template("app.html", page="add", title="Add Student")
