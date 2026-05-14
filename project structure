@@ -1,0 +1,16 @@
+flask_student_app/
+│
+├─ app.py
+├─ requirements.txt
+├─ schema.sql
+│
+├─ templates/
+│   ├─ base.html
+│   ├─ index.html
+│   ├─ list_students.html
+│   ├─ add_student.html
+│   ├─ edit_student.html
+│   └─ search.html
+│
+└─ static/
+    └─ style.css
