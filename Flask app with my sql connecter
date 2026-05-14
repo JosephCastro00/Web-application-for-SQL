@@ -1,0 +1,124 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+import mysql.connector
+
+app = Flask(__name__)
+app.secret_key = "your_secret_key_here"  # needed for flash messages
+
+def get_db_connection():
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="your_mysql_user",
+        password="your_mysql_password",
+        database="student_db"
+    )
+    return conn
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/students")
+def list_students():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM students ORDER BY id DESC")
+    students = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template("list_students.html", students=students)
+
+@app.route("/add", methods=["GET", "POST"])
+def add_student():
+    if request.method == "POST":
+        first_name = request.form["first_name"]
+        last_name = request.form["last_name"]
+        email = request.form["email"]
+        major = request.form["major"]
+        gpa = request.form["gpa"] or None
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        sql = """
+            INSERT INTO students (first_name, last_name, email, major, gpa)
+            VALUES (%s, %s, %s, %s, %s)
+        """
+        cursor.execute(sql, (first_name, last_name, email, major, gpa))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash("Student added successfully!")
+        return redirect(url_for("list_students"))
+
+    return render_template("add_student.html")
+
+@app.route("/edit/<int:student_id>", methods=["GET", "POST"])
+def edit_student(student_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        first_name = request.form["first_name"]
+        last_name = request.form["last_name"]
+        email = request.form["email"]
+        major = request.form["major"]
+        gpa = request.form["gpa"] or None
+
+        sql = """
+            UPDATE students
+            SET first_name=%s, last_name=%s, email=%s, major=%s, gpa=%s
+            WHERE id=%s
+        """
+        cursor.execute(sql, (first_name, last_name, email, major, gpa, student_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        flash("Student updated successfully!")
+        return redirect(url_for("list_students"))
+
+    cursor.execute("SELECT * FROM students WHERE id = %s", (student_id,))
+    student = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not student:
+        flash("Student not found.")
+        return redirect(url_for("list_students"))
+
+    return render_template("edit_student.html", student=student)
+
+@app.route("/delete/<int:student_id>", methods=["POST"])
+def delete_student(student_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM students WHERE id = %s", (student_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    flash("Student deleted successfully!")
+    return redirect(url_for("list_students"))
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    results = []
+    query = ""
+    if request.method == "POST":
+        query = request.form["query"]
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        sql = """
+            SELECT * FROM students
+            WHERE first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR major LIKE %s
+        """
+        like = f"%{query}%"
+        cursor.execute(sql, (like, like, like, like))
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+    return render_template("search.html", results=results, query=query)
+
+if __name__ == "__main__":
+    app.run(debug=True)
